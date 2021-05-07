@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>mysql章节 | markdown test</title>
+    <meta name="generator" content="VuePress 1.7.1">
+    
+    <meta name="description" content="md测试">
+    
+    <link rel="preload" href="/whc.md/docs/assets/css/0.styles.fd56d2dc.css" as="style"><link rel="preload" href="/whc.md/docs/assets/js/app.8e7a83d8.js" as="script"><link rel="preload" href="/whc.md/docs/assets/js/2.f087f508.js" as="script"><link rel="preload" href="/whc.md/docs/assets/js/8.120ea98c.js" as="script"><link rel="prefetch" href="/whc.md/docs/assets/js/3.957cc2dd.js"><link rel="prefetch" href="/whc.md/docs/assets/js/4.09fd2c39.js"><link rel="prefetch" href="/whc.md/docs/assets/js/5.43c908e1.js"><link rel="prefetch" href="/whc.md/docs/assets/js/6.ffe6f60a.js"><link rel="prefetch" href="/whc.md/docs/assets/js/7.44815f4f.js">
+    <link rel="stylesheet" href="/whc.md/docs/assets/css/0.styles.fd56d2dc.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/whc.md/docs/" class="home-link router-link-active"><!----> <span class="site-name">markdown test</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <!----></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><!---->  <ul class="sidebar-links"><li><a href="/whc.md/docs/" aria-current="page" class="sidebar-link">前端知识介绍</a></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>mysql知识</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/whc.md/docs/mysql.html" aria-current="page" class="active sidebar-link">mysql章节</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/whc.md/docs/mysql.html#mysql物理数据存储格式" class="sidebar-link">MySQL物理数据存储格式</a></li><li class="sidebar-sub-header"><a href="/whc.md/docs/mysql.html#变长字段在磁盘是怎么存储的" class="sidebar-link">变长字段在磁盘是怎么存储的</a></li><li class="sidebar-sub-header"><a href="/whc.md/docs/mysql.html#null值是怎么存储的" class="sidebar-link">NULL值是怎么存储的？</a></li><li class="sidebar-sub-header"><a href="/whc.md/docs/mysql.html#_40个bit位的数据头" class="sidebar-link">40个bit位的数据头</a></li><li class="sidebar-sub-header"><a href="/whc.md/docs/mysql.html#数据在磁盘上是如何存储的" class="sidebar-link">数据在磁盘上是如何存储的</a></li></ul></li></ul></section></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="mysql章节"><a href="#mysql章节" class="header-anchor">#</a> mysql章节</h1> <h2 id="mysql物理数据存储格式"><a href="#mysql物理数据存储格式" class="header-anchor">#</a> MySQL物理数据存储格式</h2> <p><strong>一行数据在磁盘上是如何存储的？</strong><br>
+这里涉及到一个概念，行格式。我们可以对一个表指定它的行存储格式是什么样的，比如COMPACT</p> <div class="language- extra-class"><pre class="language-text"><code>CREATE TABLE table_name(columns) ROW_FORMAT=COMPACT  
+ALTER TABLE  table_name ROW_FORMAT=COMPACT  
+</code></pre></div><p>你可以在建表的时候就指定行存储的格式，也可以建表后修改行存储的格式</p> <hr> <p><strong>每一行数据实际存储的时候，格式类似这样：</strong></p> <blockquote><p><em>变长字段的长度列表，null值列表，数据头，column01的值，column02的值，column0n的值....</em><br> <strong>行格式:</strong> 对于每行数据，他其实存储的时候都会有一些头字段对这行数据进行一定的描述，然后再放上这行数据每一列的具体的值。除了COMPACT意外，还有其他几种行存储格式，大同小异。</p></blockquote> <h2 id="变长字段在磁盘是怎么存储的"><a href="#变长字段在磁盘是怎么存储的" class="header-anchor">#</a> 变长字段在磁盘是怎么存储的</h2> <p>假设现在有一行数据，它有三个字段，分别是varchar(10),char(1),char(1),所以这行数据可能是hello a a，第一个字段的值是hello，第二和第三个字段都是a<br>
+第二行数据，假设这行数据是hi a a，第一个字段是hi，后面两个字段是a<br>
+假设把上面两行数据写入了一个磁盘文件里，两行数据是挨在一起的，那么这两行数据在磁盘里可能是hello a a hi a a<br> <strong>为什么变长字段难以读取</strong><br>
+因为我们不知道变长字段的实际长度，所以需要引入<strong>变长字段的长度列表</strong><br>
+比如你在存储hello a a的时候，需要带上一些额外的附加信息，第一块就是变长字段的长度列表<br>
+hello字段长度是5，十六进制是0x05，在磁盘中存储格式是这样的：0x05 null值列表 数据头 hello a a<br>
+hi字段长度是2，十六进制是0x02，在磁盘中存储格式是这样的：0x02 null值列表 数据头 hi a a<br> <strong>然后两行数据放在磁盘文件中格式如下：</strong><br>
+0x05 null值列表 数据头 hello a a 0x02 null值列表 数据头 hi a a</p> <h3 id="多个变长字段-如何存储他们的长度"><a href="#多个变长字段-如何存储他们的长度" class="header-anchor">#</a> 多个变长字段，如何存储他们的长度</h3> <p>比如一行数据有五个字段，分别是varchar(10),varchar(5),varchar(20),char(1),char(1)<br>
+这行数据是:<strong>hello hi hao a a</strong><br>
+现在hello hi hao三个字段的长度分别是0x05,0x02,0x03，但是在<strong>实际存放变长字段长度列表的时候，是逆序放的</strong>，所以这行数据可能按下面的方式存放：<br> <em><strong>0x03 0x02 0x05 null值列表 数据头 hello hi hao a a</strong></em></p> <h2 id="null值是怎么存储的"><a href="#null值是怎么存储的" class="header-anchor">#</a> NULL值是怎么存储的？</h2> <p>如果一个字段是null，说明该字段什么都没有。如果存入null字符串的话太浪费空间了，解决方案如下：<br> <strong>NULL值以二进制bit位来存储</strong><br>
+接下来看看NULL值列表在磁盘上到底如何存储？<br>
+很简单，对于所有的NULL值，不通过字符串在磁盘上存储，而是通过二进制的bit位来存储，一行数据里假设多个字段都是NULL，那么这些字段的NULL是以bit位的形式存到了NULL值列表中。<br>
+举个例子，假设有一张表，建表语句如下：</p> <div class="language- extra-class"><pre class="language-text"><code>CREATE TABLE customer(
+  name VARCHAR(10) NOT NULL,
+  address VARCHAR(20),
+  gender CHAR(1),
+  job  VARCHAR(30),
+  school VARCHAR(50)
+)
+</code></pre></div><p>客户表有五个字段，分别代表姓名、地址、性别、工作和学校。4个变长字段，1个定长字段，其中name是不能为NULL的。<br>
+现在我们假设有如下一行数据，“jack NULL m NULL xx_school”,其中5个字段2个是NULL<br>
+针对上面假设的数据，我们有4个变长字段，按照前面说的，变长字段长度列表，我们是不是应该逆序存放name，address、job、school的长度？<br>
+说起来是这样，但是我们要注意一个问题，变长字段的值可能是NULL，如果变长字段值为NULL，那么是不需要在变长字段长度列表中存放其长度的。如下所示：<br> <em>0x09 0x04 NULL值列表 头信息 column1=value1 column2=value2 ... columnN=valueN</em><br> <strong>NULL值列表存放的是所有允许为NULL的字段（不是说字段值为NULL，而是允许为NULL）</strong><br>
+在NULL值列表中，存放的是二进制bit位，比如bit值是1，说明是NULL，如果bit值是0，说明不是NULL。<br>
+比如上面四个字段（address，gender，job，school）都允许为null，“jack NULL m NULL xx_school”中两个字段是NULL，2个字段不是null，所以4个bit位应该是1010，但是<strong>实际存放NULL值列表的时候，是按照逆序存放的</strong>，放入的是0101。所以数据看着像下面所示：<br> <em>0x09 0x04 0101 头信息 column1=value1 column2=value2 ... columnN=valueN</em><br> <strong>另外，NULL值列表存放的时候不仅仅是4个bit位，至少要是8个bit位的倍数，如果不足8个bit位，需要在前面补0（高位补零），实际存放如下所示：</strong><br> <em>0x09 0x04 00000101 头信息 column1=value1 column2=value2 ... columnN=valueN</em></p> <h2 id="_40个bit位的数据头"><a href="#_40个bit位的数据头" class="header-anchor">#</a> 40个bit位的数据头</h2> <p>前两个bit位都是预留的，没有任何含义</p> <hr> <p>接下来一个bit位是<strong>delete_mask</strong>,标识这行数据是否被删除了。所以说mysql删除一条数据的时候，未必是立马把它从磁盘清理掉</p> <hr> <p>下一个bit为是<strong>min_rec_mask</strong>,B+树里每一层的非叶子节点里的最小值都有这个标记</p> <hr> <p>接下来4个bit位是<strong>n_owned</strong>,它记录了一个记录数，具体作用后续会讲</p> <hr> <p>接着有13个bit位是<strong>heap_no</strong>,它代表当前这行数据在记录堆里的位置，后续讲</p> <hr> <p>然后3个bit位是<strong>record_type</strong>,代表的是这行数据的数据类型，0-普通类型 1-B+树非叶子节点 2-最小值数据 3-最大值是数据</p> <hr> <p>最后16个bit位是<strong>next_record</strong>，是指向下一条数据的指针</p> <hr> <h2 id="数据在磁盘上是如何存储的"><a href="#数据在磁盘上是如何存储的" class="header-anchor">#</a> 数据在磁盘上是如何存储的</h2> <p>我们的数据是jack NULL m NULL xx_school，它实际存储格式如下：<br>
+0x09 0x04 00000101 0000000000000000000000010000000000011001 jack NULL m NULL xx_school<br>
+但是实际上不是怎么存储的，<strong>需要根据数据库指定的字符集编码，进行编码后再存储的</strong>，所以实际数据如下：<br>
+0x09 0x04 00000101 0000000000000000000000010000000000011001 616161 636320 6262626262<br> <strong>其实这还不是最终的存储格式，真实数据里还有一些隐藏字段</strong></p> <hr> <p>首先有一个<strong>DB_ROW_ID</strong>字段，它是一个行的唯一标识，是数据库给你搞的一个唯一标识，不是你的主键ID字段。如果我们没有指定主键和unique key唯一索引的时候，它就内存自动加一个ROW_ID作为主键。</p> <hr> <p>接着是<strong>DB_TRX_ID</strong>字段，这是跟事务相关的，它是说这是哪个事务更新的数据，是事务的ID。</p> <hr> <p>最后是<strong>DB_ROLL_PTR</strong>字段，这是回滚指针，是用来进行事务回滚的。</p> <hr> <p>加上隐藏字段后，实际数据看起来可能如下：<br>
+0x09 0x04 00000101 0000000000000000000000010000000000011001 00000000094c(DB_ROW_ID) 00000000032D(DB_TRX_ID) EA000010078E(DB_ROLL_PTR) 616161 636320 6262626262</p></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/whc.md/docs/" class="prev router-link-active">
+        前端知识介绍
+      </a></span> <!----></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/whc.md/docs/assets/js/app.8e7a83d8.js" defer></script><script src="/whc.md/docs/assets/js/2.f087f508.js" defer></script><script src="/whc.md/docs/assets/js/8.120ea98c.js" defer></script>
+  </body>
+</html>
