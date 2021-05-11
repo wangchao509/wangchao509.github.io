@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>MySQL章节2 | whc的学习笔记</title>
+    <meta name="generator" content="VuePress 1.7.1">
+    
+    <meta name="description" content="主要是java技术类笔记">
+    
+    <link rel="preload" href="/docs/assets/css/0.styles.44acb28c.css" as="style"><link rel="preload" href="/docs/assets/js/app.344ec2b9.js" as="script"><link rel="preload" href="/docs/assets/js/3.3f7b3424.js" as="script"><link rel="preload" href="/docs/assets/js/4.f05356a4.js" as="script"><link rel="prefetch" href="/docs/assets/js/10.f52531eb.js"><link rel="prefetch" href="/docs/assets/js/2.33caf224.js"><link rel="prefetch" href="/docs/assets/js/5.2a066aec.js"><link rel="prefetch" href="/docs/assets/js/6.6c3a24b2.js"><link rel="prefetch" href="/docs/assets/js/7.c4dac6f2.js"><link rel="prefetch" href="/docs/assets/js/8.170b349c.js"><link rel="prefetch" href="/docs/assets/js/9.9c03231a.js">
+    <link rel="stylesheet" href="/docs/assets/css/0.styles.44acb28c.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/docs/" class="home-link router-link-active"><!----> <span class="site-name">whc的学习笔记</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <!----></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><!---->  <ul class="sidebar-links"><li><a href="/docs/" aria-current="page" class="sidebar-link">站点介绍</a></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>markdown知识</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/docs/markdown.html" class="sidebar-link">前端知识介绍</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>MySQL知识</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/docs/mysql.html" class="sidebar-link">MySQL章节1</a></li><li><a href="/docs/mysql2.html" aria-current="page" class="active sidebar-link">MySQL章节2</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/docs/mysql2.html#mysql最牛的rr隔离级别-是如何基于readview机制实现的" class="sidebar-link">MySQL最牛的RR隔离级别，是如何基于ReadView机制实现的？</a></li></ul></li></ul></section></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="mysql章节2"><a href="#mysql章节2" class="header-anchor">#</a> MySQL章节2</h1> <h2 id="mysql最牛的rr隔离级别-是如何基于readview机制实现的"><a href="#mysql最牛的rr隔离级别-是如何基于readview机制实现的" class="header-anchor">#</a> MySQL最牛的RR隔离级别，是如何基于ReadView机制实现的？</h2> <h3 id="rr级别下如何解决不可重复读问题的"><a href="#rr级别下如何解决不可重复读问题的" class="header-anchor">#</a> RR级别下如何解决不可重复读问题的</h3> <p>RR(可重复读)级别下，你这个事务读取一条数据，无论读多少次，都是一个值，别的事务哪怕修改数据之后提交了事务，你也是看不到人家修改的值的。这就避免了不可重复读的问题。别的事务插入一条数据，你也是看不到的，这就避免了幻读的问题。</p> <p>那到底是如何实现的呢？<br>
+首先，我们还是假设数据库里有一条数据，这个数据是事务id=5的插入的。此时有事务A（id=60）和事务B（id=70）在同时运行，如下图所示：
+<img src="/docs/assets/img/repeatable_committed1.6be60190.png" alt="可重复读与ReadView" title="repeatable_committed1.png"></p> <p>接着事务A发起了一次查询，因为是第一次查询，所以生成了ReadView，此时min_trx_id=60，max_trx_id=71,creator_trx_id=60,m_ids=[60,70],此时如下图：
+<img src="/docs/assets/img/repeatable_committed2.78f34439.png" alt="可重复读与ReadView" title="repeatable_committed2.png"></p> <p>这个时候事务A基于这个ReadView去查询数据，此时trx_id=50，是小于min_trx_id=60，说它发起事务之前就已经有事务修改了数据并提交了事务，所以可以查到这条数据的原始值。如下图所示：
+<img src="/docs/assets/img/repeatable_committed3.410b15e2.png" alt="可重复读与ReadView" title="repeatable_committed3.png"></p> <p>接着事务B就更新了这行数据的值为B，此时会把trx_id修改为70，同时会生成undo log，关键是事务B提交了，也就是说此时事务B已经结束了，如下图：
+<img src="/docs/assets/img/repeatable_committed4.441d2604.png" alt="可重复读与ReadView" title="repeatable_committed4.png"></p> <p>这个时候大家思考一个问题，ReadView中的m_ids还是[60,70]吗？</p> <p>那必然是的，因为ReadView一旦生成了就不会改变了，这个时候事务B虽然已经结束了，但是事务A的ReadView里m_ids还是[60,70]。<br>
+它的意思是事务A开启的时候，事务B当时是在运行的。</p> <p>那么此时事务A去查询这条数据的值，他会惊讶的发现此时数据的trx_id=70,70在min_trx_id和max_trx_id之间，同时还在m_ids=[60,70]列表中。<br>
+这说明事务A开启查询的时候，id=70的事务B还是在运行的，然后事务B更新了这条数据，所以此时事务A是不能查询到事务B更新的值，因此此时会顺着undo log版本链条往下找，如下图所示：
+<img src="/docs/assets/img/repeatable_committed5.2a07af31.png" alt="可重复读与ReadView" title="repeatable_committed5.png"><br>
+事务A顺着roll_pointer找最近的undo log，发现最近的undo log的trx_id=50,它是小于min_trx_id=60的，说明它是在事务A开启之前就已经提交这个事务了，所以事务A是可以查询到这个值的，此时事务A查到的是原始值。<br> <img src="/docs/assets/img/repeatable_committed6.2287f40b.png" alt="可重复读与ReadView" title="repeatable_committed6.png"></p> <p>可以看到两次查询查到的结果是一样的，都是原始值。不管别的事务如何修改数据，事务A的ReadView始终是不变的，基于这个ReadView看到的值始终是一样的。</p> <h3 id="rr级别下如何解决幻读问题的"><a href="#rr级别下如何解决幻读问题的" class="header-anchor">#</a> RR级别下如何解决幻读问题的</h3> <p><img src="/docs/assets/img/repeatable_committed7.244d09a1.png" alt="可重复读与ReadView" title="repeatable_committed7.png"><br> <img src="/docs/assets/img/repeatable_committed8.3e7049dd.png" alt="可重复读与ReadView" title="repeatable_committed8.png"></p></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/docs/mysql.html" class="prev">
+        MySQL章节1
+      </a></span> <!----></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/docs/assets/js/app.344ec2b9.js" defer></script><script src="/docs/assets/js/3.3f7b3424.js" defer></script><script src="/docs/assets/js/4.f05356a4.js" defer></script>
+  </body>
+</html>
