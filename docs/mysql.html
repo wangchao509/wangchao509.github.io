@@ -8,7 +8,7 @@
     
     <meta name="description" content="主要是java技术类笔记">
     
-    <link rel="preload" href="/docs/assets/css/0.styles.44acb28c.css" as="style"><link rel="preload" href="/docs/assets/js/app.92b3039a.js" as="script"><link rel="preload" href="/docs/assets/js/5.4f0d6612.js" as="script"><link rel="preload" href="/docs/assets/js/4.062fc564.js" as="script"><link rel="prefetch" href="/docs/assets/js/10.50cd0b84.js"><link rel="prefetch" href="/docs/assets/js/11.4e21d111.js"><link rel="prefetch" href="/docs/assets/js/12.66aabccd.js"><link rel="prefetch" href="/docs/assets/js/2.ac6e5ba7.js"><link rel="prefetch" href="/docs/assets/js/3.27366f81.js"><link rel="prefetch" href="/docs/assets/js/6.7dc7d677.js"><link rel="prefetch" href="/docs/assets/js/7.80edc091.js"><link rel="prefetch" href="/docs/assets/js/8.e1942d83.js"><link rel="prefetch" href="/docs/assets/js/9.f83f2f4c.js">
+    <link rel="preload" href="/docs/assets/css/0.styles.44acb28c.css" as="style"><link rel="preload" href="/docs/assets/js/app.54a4cdcf.js" as="script"><link rel="preload" href="/docs/assets/js/5.7c82c2c2.js" as="script"><link rel="preload" href="/docs/assets/js/4.3820cc2f.js" as="script"><link rel="prefetch" href="/docs/assets/js/10.e67adc99.js"><link rel="prefetch" href="/docs/assets/js/11.8b744868.js"><link rel="prefetch" href="/docs/assets/js/12.eea5766e.js"><link rel="prefetch" href="/docs/assets/js/2.9151ef46.js"><link rel="prefetch" href="/docs/assets/js/3.02c95c72.js"><link rel="prefetch" href="/docs/assets/js/6.5f18c9d2.js"><link rel="prefetch" href="/docs/assets/js/7.0d5780ef.js"><link rel="prefetch" href="/docs/assets/js/8.5d0d470d.js"><link rel="prefetch" href="/docs/assets/js/9.c80a059c.js">
     <link rel="stylesheet" href="/docs/assets/css/0.styles.44acb28c.css">
   </head>
   <body>
@@ -87,9 +87,9 @@ cat /etc/rc.local</p> <h2 id="redo日志对于事务提交后-数据绝对不会
 一个redo log block是512个字节，总共分为3部分：<br>
 第一部分：12个字节的header（块头）<br>
 块头分为四部分：<br>
-1, 4个字节的block_no，就是块唯一编号
-2，2个字节的data length，就是block里写入了多少字节的数据
-3，2个字节的first record group，这个是说每个事务会有多个redo log，是一个redo log group，即一组redo log。那么在这个block里的第一组    redo log的偏移量，就是这2个字节存储的。<br>
+1, 4个字节的block_no，就是块唯一编号<br>
+2，2个字节的data length，就是block里写入了多少字节的数据<br>
+3，2个字节的first record group，这个是说每个事务会有多个redo log，是一个redo log group，即一组redo log。那么在这个block里的第一组      redo log的偏移量，就是这2个字节存储的。<br>
 4，4个字节的checkpoint on<br>
 第二部分：496个字节的body（块体）<br>
 第三部分：4个字节的trailer（块尾）<br> <img src="/docs/assets/img/redo-log-block.8b4f5554.png" alt="redo log block结构图" title="redo-log-block.png"></p> <p>细化header的redo log block结构图：<br> <img src="/docs/assets/img/redo-log-block-header.cbdadb33.png" alt="有header的redo log block结构图" title="redo-log-block-header.png"></p> <p>假设你要写第一个redo log了，是不是首先要在内存里把这个redo log给弄到一个redo log block数据结构中去？<br>
@@ -101,7 +101,7 @@ cat /etc/rc.local</p> <h2 id="redo日志对于事务提交后-数据绝对不会
 （3）后台线程定时刷新，有一个后台线程每隔1s就会把redo log buffer里的redo log block刷到磁盘文件里去<br>
 （4）MySQL关闭的时候，redo log block都会刷入到磁盘文件中去。<br> <strong>总结：不管怎么说，都是为了保证一个事务执行的时候，redo log都进入redo log buffer，事务提交的时候，事务对应的redo log必须刷入磁盘文件，接着才算是事务提交成功，否则事务提交就是失败。保证这一点，就是保证了事务提交之后，数据不会丢失，有redo log在磁盘文件里就行了。</strong><br>
 还得配置一个参数，提交事务把redo log刷入磁盘文件的os cache后，还得强行从os cache刷入物理磁盘。</p> <p><font color="FF0000" size="4">是把所有的redo log日志文件都写入到同一个日志文件中吗？对磁盘占用空间越来越大怎么办？</font><br>
-实际上默认情况下，redo log都会写入同一个目录的文件中，这个目录可以通过 <font color="FF0000" size="4">show variables like 'datadir'</font> 来查看,可以通过<font color="FF0000" size="4">innodb_log_group_home_dir</font>参数来设置这个目录，然后redo log文件是有多个的，写满一个，会写下一个redo log文件，通过<font color="FF0000" size="4">innodb_log_file_size</font>可以指定每个redo log文件的大小，默认是48M，通过<font color="FF0000" size="4">innodb_log_files_in_group</font>指定日志文件的数量，默认就2个。</p> <p>所以默认情况下，目录里就两个日志文件，分别是ib_logfile0和ib_logfile1，每个48M，如果两个文件都写满了，那么会重新开始写第一个文件，覆盖原来的内容。所以MySQL最多会保留最近的96M的redo log。一个redo log几个字节到几十个字节不等，96M足够你存储上百万的redo log了。</p> <h2 id="事务执行到一半要回滚怎么办-再探undo-log回滚日志原理"><a href="#事务执行到一半要回滚怎么办-再探undo-log回滚日志原理" class="header-anchor">#</a> 事务执行到一半要回滚怎么办，再探undo log回滚日志原理！</h2> <p>undo log日志，也就是回滚日志，这种日志要应对的场景，就是事务回滚的场景。<br> <strong>一个事务里的一通增删改执行到一半，需要回滚，怎么办？</strong><br> <img src="/docs/assets/img/undo_log.e96af5aa.png" alt="redo log做到一半需要回滚示意图" title="undo_log.png"></p> <p><strong>undo log日志记录的东西</strong>其实非常简单，如果你在缓存页里执行了一个insert语句，那么此时你在undo log日志里需要记录这条记录的主键和一个delete语句，能让你把这次操作给回退了。</p> <p>如果你在缓存页里执行的是delete语句，那么你要把删除的那条数据记录下来，如果要回滚，执行一个insert操作，把那条数据插入回去。</p> <p>如果你在缓存页里执行的是update语句，那么你起码要把更新前的那个值记录下来，回滚的时候重新update一下，把你之前更新前的旧值给更新回去。<br> <img src="/docs/assets/img/undo_log_structure.6195a0dd.png" alt="undo log示意图" title="undo_log_structure.png"></p> <h2 id="insert语句的undo-log回滚日志长什么样"><a href="#insert语句的undo-log回滚日志长什么样" class="header-anchor">#</a> insert语句的undo log回滚日志长什么样？</h2> <p>Insert语句的undo log的类型是<strong>TRX_UNDO_INSERT_REC</strong>,主要包含以下一些东西：</p> <blockquote><p>. 这条日志的开始位置<br>
+实际上默认情况下，redo log都会写入同一个目录的文件中，这个目录可以通过 <font color="FF0000" size="4">show variables like 'datadir'</font> 来查看,可以通过<font color="FF0000" size="4">innodb_log_group_home_dir</font>参数来设置这个目录，然后redo log文件是有多个的，写满一个，会写下一个redo log文件，通过<font color="FF0000" size="4">innodb_log_file_size</font>可以指定每个redo log文件的大小，默认是48M，通过<font color="FF0000" size="4">innodb_log_files_in_group</font>指定日志文件的数量，默认就2个。</p> <p>所以默认情况下，目录里就两个日志文件，分别是<strong>ib_logfile0和ib_logfile1</strong>，每个48M，如果两个文件都写满了，那么会重新开始写第一个文件，覆盖原来的内容。所以MySQL最多会保留最近的96M的redo log。一个redo log几个字节到几十个字节不等，96M足够你存储上百万的redo log了。</p> <h2 id="事务执行到一半要回滚怎么办-再探undo-log回滚日志原理"><a href="#事务执行到一半要回滚怎么办-再探undo-log回滚日志原理" class="header-anchor">#</a> 事务执行到一半要回滚怎么办，再探undo log回滚日志原理！</h2> <p>undo log日志，也就是回滚日志，这种日志要应对的场景，就是事务回滚的场景。<br> <strong>一个事务里的一通增删改执行到一半，需要回滚，怎么办？</strong><br> <img src="/docs/assets/img/undo_log.e96af5aa.png" alt="redo log做到一半需要回滚示意图" title="undo_log.png"></p> <p><strong>undo log日志记录的东西</strong>其实非常简单，如果你在缓存页里执行了一个insert语句，那么此时你在undo log日志里需要记录这条记录的主键和一个delete语句，能让你把这次操作给回退了。</p> <p>如果你在缓存页里执行的是delete语句，那么你要把删除的那条数据记录下来，如果要回滚，执行一个insert操作，把那条数据插入回去。</p> <p>如果你在缓存页里执行的是update语句，那么你起码要把更新前的那个值记录下来，回滚的时候重新update一下，把你之前更新前的旧值给更新回去。<br> <img src="/docs/assets/img/undo_log_structure.6195a0dd.png" alt="undo log示意图" title="undo_log_structure.png"></p> <h2 id="insert语句的undo-log回滚日志长什么样"><a href="#insert语句的undo-log回滚日志长什么样" class="header-anchor">#</a> insert语句的undo log回滚日志长什么样？</h2> <p>Insert语句的undo log的类型是<strong>TRX_UNDO_INSERT_REC</strong>,主要包含以下一些东西：</p> <blockquote><p>. 这条日志的开始位置<br>
 . 主键的各列长度和值<br>
 . 表ID<br>
 . undo log日志编号<br>
@@ -163,6 +163,6 @@ level3的值为：READ UNCOMMITTED、READ COMMITTED、REPEATABLE READ、SERIALIZ
       </a>
       →
     </span></p></div> </main></div><div class="global-ui"></div></div>
-    <script src="/docs/assets/js/app.92b3039a.js" defer></script><script src="/docs/assets/js/5.4f0d6612.js" defer></script><script src="/docs/assets/js/4.062fc564.js" defer></script>
+    <script src="/docs/assets/js/app.54a4cdcf.js" defer></script><script src="/docs/assets/js/5.7c82c2c2.js" defer></script><script src="/docs/assets/js/4.3820cc2f.js" defer></script>
   </body>
 </html>
